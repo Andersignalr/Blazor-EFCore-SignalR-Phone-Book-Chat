@@ -4,4 +4,4 @@ bin/
 
 .vs/
 
-Contacts.db*
+ContactsDb.db*
