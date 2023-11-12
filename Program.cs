@@ -1,14 +1,19 @@
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
 using IsComing.Data;
+using IsComing.Grid;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddSingleton<WeatherForecastService>();
+
+// register factory and configure the options
+#region snippet1
+builder.Services.AddDbContextFactory<ContactContext>(opt =>
+    opt.UseSqlite($"Data Source={nameof(ContactContext.ContactsDb)}.db"));
+#endregion
+
 
 var app = builder.Build();
 
