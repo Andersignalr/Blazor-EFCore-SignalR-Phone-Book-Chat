@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using IsComing.Data;
 using IsComing.Grid;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +15,9 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddDbContextFactory<ContactContext>(opt =>
     opt.UseSqlite($"Data Source={nameof(ContactContext.ContactsDb)}.db"));
 #endregion
+
+// Register SignalR Hub
+builder.Services.AddSignalR();
 
 // pager
 builder.Services.AddScoped<IPageHelper, PageHelper>();
@@ -55,6 +60,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.MapBlazorHub();
+app.MapHub<ChatHub>("/chathub");
 app.MapFallbackToPage("/_Host");
 
 app.Run();

@@ -35,6 +35,12 @@ public class ContactContext : DbContext
     /// </summary>
     public DbSet<Contact>? Contacts { get; set; }
 
+
+
+    public DbSet<ChatMessage>? ChatMessages { get; set; }
+
+
+
     /// <summary>
     /// Define the model.
     /// </summary>
