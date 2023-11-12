@@ -242,6 +242,8 @@
 
         using var context = DbFactory.CreateDbContext();
         var query = context.Contacts?.AsQueryable();
+        var chatMessages = await context.ChatMessages.AsQueryable().ToListAsync();
+        
 
         if (query is not null)
         {
