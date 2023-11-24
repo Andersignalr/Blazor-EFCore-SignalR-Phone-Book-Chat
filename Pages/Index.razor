@@ -104,6 +104,15 @@
         }
     }
 
+    public Index(int page)
+    {
+        Page = page;
+    }
+
+    public Index()
+    {
+        
+    }
     /// <summary>
     /// A wrapper for grid-related activity (like delete).
     /// </summary>
@@ -242,8 +251,7 @@
 
         using var context = DbFactory.CreateDbContext();
         var query = context.Contacts?.AsQueryable();
-        var chatMessages = await context.ChatMessages.AsQueryable().ToListAsync();
-        
+
 
         if (query is not null)
         {

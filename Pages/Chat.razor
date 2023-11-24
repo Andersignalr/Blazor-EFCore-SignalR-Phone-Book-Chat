@@ -9,78 +9,94 @@
 <h3>Chat</h3>
 
 <div>
-    <ul>
-        @foreach (var mensagem in mensagens)
-        {
-            <li>@mensagem</li>
-        }
-    </ul>
+	<ul>
+		@foreach (var mensagem in mensagens)
+		{
+			<li>@mensagem</li>
+		}
+	</ul>
 </div>
 
 <input id="txtMensagem" type="text" @bind="novaMensagem" />
 <button @onclick="EnviarMensagem">Enviar</button>
 
 @code {
-    private List<string> mensagens = new List<string>();
-    private string novaMensagem = "";
+	private List<string> mensagens = new List<string>();
+	private string novaMensagem = "";
 
-    private HubConnection hubConnection;
+	private HubConnection hubConnection;
 
-    protected override async Task OnInitializedAsync()
-    {
-        hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
-            .Build();
+	protected override async Task OnInitializedAsync()
+	{
+		using var context = DbFactory.CreateDbContext();
+		if (context.ChatMessages is not null)
+		{
+			var chatMessages = await context.ChatMessages.AsQueryable().ToListAsync();
+			foreach (var message in chatMessages)
+			{
+				var encodedMsg = $"{message.SenderId}: {message.Content}";
+				mensagens.Add(encodedMsg);
+				await InvokeAsync(StateHasChanged);
+			}
+		}
 
-        hubConnection.On<string, string>("ReceberMensagem", async (user, message) =>
-        {
-            using var context = DbFactory.CreateDbContext();
+		hubConnection = new HubConnectionBuilder()
+			.WithUrl(Navigation.ToAbsoluteUri("/chathub"))
+			.Build();
 
+		hubConnection.On<string, string>("ReceberMensagem", async (user, message) =>
+		{
+			using var context = DbFactory.CreateDbContext();
 
-            context.ChatMessages.Add(new ChatMessage
-            {
-                Content = message,
-                SenderId = user,
-                Timestamp = DateTime.Now
-            });
+			if (context is not null && context.ChatMessages is not null)
+			{
 
-            try
-            {
-                await context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
+				context.ChatMessages.Add(new ChatMessage
+					{
+						Content = message,
+						SenderId = user,
+						ReceiverId = "Global",
+						Timestamp = DateTime.Now
+					});
 
-            var encodedMsg = $"{user}: {message}";
-            mensagens.Add(encodedMsg);
-            await InvokeAsync(StateHasChanged);
-        });
+				try
+				{
+					await context.SaveChangesAsync();
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine(ex);
+				}
+			}
 
-        await hubConnection.StartAsync();
-    }
+			var encodedMsg = $"{user}: {message}";
+			mensagens.Add(encodedMsg);
+			await InvokeAsync(StateHasChanged);
+		});
 
-    private async Task EnviarMensagem()
-    {
-        if(novaMensagem is not null)
-        {
-            await hubConnection.SendAsync("EnviarMensagem", "NomeDoUsuario", novaMensagem);
-            novaMensagem = "";
-        }
-        await Focus("txtMensagem");
-    }
+		await hubConnection.StartAsync();
+	}
 
-    public async Task Focus(string elementId)
-    {
-        await js.InvokeVoidAsync("focusById", elementId);
-    }
+	private async Task EnviarMensagem()
+	{
+		if (novaMensagem is not null)
+		{
+			await hubConnection.SendAsync("EnviarMensagem", "NomeDoUsuario", novaMensagem);
+			novaMensagem = "";
+		}
+		await Focus("txtMensagem");
+	}
 
-    public async ValueTask DisposeAsync()
-    {
-        if (hubConnection is not null)
-        {
-            await hubConnection.DisposeAsync();
-        }
-    }
+	public async Task Focus(string elementId)
+	{
+		await js.InvokeVoidAsync("focusById", elementId);
+	}
+
+	public async ValueTask DisposeAsync()
+	{
+		if (hubConnection is not null)
+		{
+			await hubConnection.DisposeAsync();
+		}
+	}
 }
